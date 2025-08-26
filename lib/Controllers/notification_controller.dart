@@ -49,7 +49,7 @@ class NotificationController extends GetxController {
       },
     );
 
-    await requestPermissions();
+    //  await requestPermissions();
   }
 
   /// Ask for notification permission; show UX hint if denied.
