@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:task_trells/Controllers/notification_controller.dart';
 import 'package:task_trells/Utilities/helpers.dart';
 import 'package:task_trells/Controllers/todo_controller.dart';
 import 'package:task_trells/widgets/bottomshets/todoformConfig_model.dart';
@@ -126,13 +127,33 @@ class _TodoFormBottomSheetState extends State<TodoFormBottomSheet> {
                               style: const TextStyle(fontSize: 16),
                             ),
                           ),
+                          // TextButton.icon(
+                          //   onPressed: () {
+                          //     FocusScope.of(context).unfocus();
+                          //     _controller.pickDateTime(context).then((_) {
+                          //       _titleFocusNode.unfocus();
+                          //       _descriptionFocusNode.unfocus();
+                          //     });
+                          //   },
+                          //   icon: const Icon(Icons.calendar_today),
+                          //   label: const Text('Schedule'),
+                          // ),
                           TextButton.icon(
                             onPressed: () {
-                              // Unfocus text fields before opening the date picker
                               FocusScope.of(context).unfocus();
-                              _controller.pickDateTime(context).then((_) {
-                                // Refocus the title field after picking date/time
-                                // FocusScope.of(context).requestFocus(_titleFocusNode);
+
+                              // Check if the current scheduled date is in the past.
+                              // If it is, reset it to today's date before opening the picker.
+                              final DateTime now = DateTime.now();
+                              final DateTime? currentScheduledAt =
+                                  _controller.scheduleAt.value;
+
+                              if (currentScheduledAt != null &&
+                                  currentScheduledAt.isBefore(now)) {
+                                _controller.scheduleAt.value = now;
+                              }
+
+                              _controller.pickDateTime(context).then(() {
                                 _titleFocusNode.unfocus();
                                 _descriptionFocusNode.unfocus();
                               });
@@ -162,20 +183,23 @@ class _TodoFormBottomSheetState extends State<TodoFormBottomSheet> {
                             },
                           ),
                         TextButton.icon(
-                          onPressed: () {
+                          onPressed: () async {
                             // Unfocus text fields before showing reminder options
                             FocusScope.of(context).unfocus();
-                            _controller
-                                .showReminderOptions(
-                                  context,
-                                  initialDate: _controller.scheduleAt.value,
-                                )
-                                .then((_) {
-                                  // Refocus the title field after setting reminder
-                                  // FocusScope.of(context).requestFocus(_titleFocusNode);
-                                  _titleFocusNode.unfocus();
-                                  _descriptionFocusNode.unfocus();
-                                });
+                            print('Reminder button pressed===');
+                            try {
+                              _controller.showReminderOptions(
+                                context,
+                                initialDate: _controller.scheduleAt.value,
+                              );
+                              _titleFocusNode.unfocus();
+                              _descriptionFocusNode.unfocus();
+                            } catch (e) {
+                              print('An error occurred: $e');
+                            }
+                            // print('object===${_controller.reminderTime.value}');
+                            _titleFocusNode.unfocus();
+                            _descriptionFocusNode.unfocus();
                           },
                           icon: const Icon(Icons.notifications_active),
                           label: const Text('Set Reminder'),
@@ -198,7 +222,7 @@ class _TodoFormBottomSheetState extends State<TodoFormBottomSheet> {
                         child: const Text('Cancel'),
                       ),
                       ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
                           if (_formKey.currentState!.validate()) {
                             if (_controller.reminderTime.value != null &&
                                 _controller.reminderTime.value!.isBefore(
@@ -214,7 +238,7 @@ class _TodoFormBottomSheetState extends State<TodoFormBottomSheet> {
 
                             // Unfocus text fields and then save
                             FocusScope.of(context).unfocus();
-                            widget.config.onSave(
+                            await widget.config.onSave(
                               _titleController.text,
                               _descriptionController.text,
                             );

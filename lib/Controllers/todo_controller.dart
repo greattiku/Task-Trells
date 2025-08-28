@@ -9,6 +9,7 @@ import 'package:task_trells/Enums/status_enum.dart';
 import 'package:task_trells/Enums/todo_priority_enum.dart';
 import 'package:task_trells/todo_service.dart';
 import '../Models/todo.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class TodoController extends GetxController {
   final TodoService _todoService = Get.find<TodoService>();
@@ -155,7 +156,7 @@ class TodoController extends GetxController {
     DateTime? scheduledAt,
     DateTime? reminderAt,
     TodoPriority? priority,
-  }) {
+  }) async {
     if (title.isEmpty) return;
     final newTodo = _todoService.addTodo(
       title,
@@ -164,6 +165,15 @@ class TodoController extends GetxController {
       reminderAt: reminderAt,
       priority: priority,
     );
+    // ✅ Call the new method to handle permission and reminder
+    await _setReminderIfPermissionGranted(
+      todoId: newTodo.id,
+      title: newTodo.title,
+      body: newTodo.description,
+      newReminderAt: newTodo.reminderAt,
+      previousReminderAt: null,
+    );
+
     switch (newTodo.status) {
       case Status.overdue:
         overdue.insert(0, newTodo);
@@ -183,11 +193,12 @@ class TodoController extends GetxController {
     DateTime? newScheduledAt,
     DateTime? newReminderAt,
     TodoPriority? newPriority,
-  }) {
+  }) async {
     if (newTitle.isEmpty) return;
     final (todo, _, __) = _findRoot(id);
     if (todo == null) return;
 
+    final previousReminder = todo.reminderAt;
     _todoService.updateTodo(
       todo,
       newTitle,
@@ -195,6 +206,15 @@ class TodoController extends GetxController {
       newScheduledAt: newScheduledAt,
       newReminderAt: newReminderAt,
       newPriority: newPriority,
+    );
+
+    // ✅ Call the new method to handle permission and reminder
+    await _setReminderIfPermissionGranted(
+      todoId: todo.id,
+      title: todo.title,
+      body: todo.description,
+      newReminderAt: newReminderAt,
+      previousReminderAt: previousReminder,
     );
 
     if (todo.status == Status.overdue &&
@@ -248,7 +268,7 @@ class TodoController extends GetxController {
     DateTime? scheduledAt,
     DateTime? reminderAt,
     TodoPriority? priority,
-  }) {
+  }) async {
     if (title.isEmpty) return;
     final (parent, parentList, parentIndex) = _findRoot(parentId);
     if (parent == null || parentList == null || parentIndex == -1) return;
@@ -260,6 +280,15 @@ class TodoController extends GetxController {
       scheduledAt: scheduledAt,
       reminderAt: reminderAt,
       priority: priority,
+    );
+
+    // ✅ Call the new method to handle permission and reminder
+    await _setReminderIfPermissionGranted(
+      todoId: subtask.id,
+      title: subtask.title,
+      body: subtask.description,
+      newReminderAt: subtask.reminderAt,
+      previousReminderAt: null,
     );
 
     parent.children ??= <Todo>[];
@@ -276,13 +305,14 @@ class TodoController extends GetxController {
     DateTime? newScheduledAt,
     DateTime? newReminderAt,
     TodoPriority? newPriority,
-  }) {
+  }) async {
     final (parent, _, __) = _findRoot(parentId);
     final subtask = parent?.children?.firstWhereOrNull(
       (c) => c.id == subtaskId,
     );
     if (parent == null || subtask == null) return;
 
+    final previousReminder = subtask.reminderAt;
     _todoService.updateSubtask(
       subtask,
       newTitle,
@@ -290,6 +320,15 @@ class TodoController extends GetxController {
       newScheduledAt: newScheduledAt,
       newReminderAt: newReminderAt,
       newPriority: newPriority,
+    );
+
+    // ✅ Call the new method to handle permission and reminder
+    await _setReminderIfPermissionGranted(
+      todoId: subtask.id,
+      title: subtask.title,
+      body: subtask.description,
+      newReminderAt: newReminderAt,
+      previousReminderAt: previousReminder,
     );
     _sortChildren(parent);
     _refreshAll();
@@ -539,5 +578,71 @@ class TodoController extends GetxController {
     });
 
     return sortedList;
+  }
+
+  // In lib/controllers/todo_controller.dart
+
+  // Add this new method to your controller
+  //
+
+  Future<void> _setReminderIfPermissionGranted({
+    required String todoId,
+    required String title,
+    String? body,
+    required DateTime? newReminderAt,
+    required DateTime? previousReminderAt,
+  }) async {
+    if (newReminderAt != null) {
+      // Check the current permission status
+      final status = await Permission.notification.status;
+      print('permission status: $status');
+
+      // If permission is not granted, request it.
+      if (status.isDenied || status.isRestricted || status.isLimited) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        final newStatus = await notificationController.requestPermissions();
+
+        // If permission is still not granted after the request, show a snackbar.
+        if (!newStatus) {
+          Get.snackbar(
+            'Permission Required',
+            'Please enable notifications in your device settings to set reminders.',
+            snackPosition: SnackPosition.BOTTOM,
+            mainButton: TextButton(
+              onPressed: () {
+                notificationController.openSystemSettings();
+              },
+              child: const Text('Open Settings'),
+            ),
+          );
+          return;
+        }
+      } else if (status.isGranted) {
+        // Permission is already granted. Proceed with scheduling.
+      } else {
+        // Permission is permanently denied. Guide user to settings.
+        Get.snackbar(
+          'Permission Required',
+          'Please enable notifications in your device settings to set reminders.',
+          snackPosition: SnackPosition.BOTTOM,
+          mainButton: TextButton(
+            onPressed: () {
+              notificationController.openSystemSettings();
+            },
+            child: const Text('Open Settings'),
+          ),
+        );
+        return;
+      }
+    }
+
+    // If all checks pass or no new reminder is set, proceed
+    _todoService.applyReminderChange(
+      todoId: todoId,
+      title: title,
+      body: body,
+      newReminderAt: newReminderAt,
+      previousReminderAt: previousReminderAt,
+    );
   }
 }

@@ -16,7 +16,7 @@ class AddTodoBottomSheet extends StatelessWidget {
     return TodoFormBottomSheet(
       config: TodoFormConfig(
         title: 'Add New Todo',
-        onSave: (title, description) {
+        onSave: (title, description) async {
           controller.addTodo(
             title,
             description,
@@ -50,7 +50,7 @@ class EditTodoBottomSheet extends StatelessWidget {
         initialTitle: todo.title,
         initialDescription: todo.description,
         showReminderCancelButton: true,
-        onSave: (title, description) {
+        onSave: (title, description) async {
           controller.updateTodo(
             todo.id,
             title,

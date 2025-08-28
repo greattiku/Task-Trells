@@ -70,7 +70,7 @@ class TodoService {
     }
   }
 
-  bool _applyReminderChange({
+  bool applyReminderChange({
     required String todoId,
     required String title,
     String? body,
@@ -102,7 +102,7 @@ class TodoService {
       item.lastModified = DateTime.now();
       _todoRepository.saveTodo(item);
       if (parent != null) _todoRepository.saveTodo(parent);
-      _applyReminderChange(
+      applyReminderChange(
         todoId: item.id,
         title: item.title,
         previousReminderAt: prevReminder,
@@ -140,7 +140,7 @@ class TodoService {
       priority: priority,
     );
     _todoRepository.saveTodo(newTodo);
-    final reminderSet = _applyReminderChange(
+    final reminderSet = applyReminderChange(
       todoId: newTodo.id,
       title: newTodo.title,
       body: newTodo.description,
@@ -171,7 +171,7 @@ class TodoService {
       ..lastModified = DateTime.now();
     _todoRepository.saveTodo(todo);
 
-    final reminderSet = _applyReminderChange(
+    final reminderSet = applyReminderChange(
       todoId: todo.id,
       title: todo.title,
       body: todo.description,
@@ -225,7 +225,7 @@ class TodoService {
 
     _todoRepository.saveTodo(subtask);
 
-    final reminderSet = _applyReminderChange(
+    final reminderSet = applyReminderChange(
       todoId: subtask.id,
       title: subtask.title,
       body: subtask.description,
@@ -266,7 +266,7 @@ class TodoService {
     }
 
     _todoRepository.saveTodo(subtask);
-    final reminderSet = _applyReminderChange(
+    final reminderSet = applyReminderChange(
       todoId: subtask.id,
       title: subtask.title,
       body: subtask.description,

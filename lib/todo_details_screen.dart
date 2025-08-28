@@ -28,7 +28,7 @@ class TodoDetailsView extends GetView<TodoController> {
                 if (liveTodo.scheduledAt != null)
                   TodoInfoRow(
                     icon: Icons.calendar_today,
-                    text: 'Scheduled: ${formatDate(liveTodo.scheduledAt)}',
+                    text: 'Due Date: ${formatDate(liveTodo.scheduledAt)}',
                     color: liveTodo.isOverdue ? Colors.red.shade700 : null,
                   ),
                 if (liveTodo.reminderAt != null)

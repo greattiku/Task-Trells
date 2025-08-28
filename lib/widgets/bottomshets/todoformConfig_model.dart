@@ -7,7 +7,7 @@ class TodoFormConfig {
   final String saveButtonText;
   final bool showReminderCancelButton;
   final bool shouldPopTwiceOnSave;
-  final void Function(String, String?) onSave;
+  final Function(String, String?) onSave;
 
   const TodoFormConfig({
     required this.title,

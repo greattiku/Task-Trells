@@ -23,7 +23,7 @@ class AddSubtaskBottomSheet extends StatelessWidget {
       config: TodoFormConfig(
         title: 'New Sub-task for $shortenedTitle',
         saveButtonText: 'Save Sub-task',
-        onSave: (title, description) {
+        onSave: (title, description) async {
           controller.addSubtask(
             parentTodo.id,
             title,
@@ -63,7 +63,7 @@ class EditSubtaskBottomSheet extends StatelessWidget {
         initialTitle: subtask.title,
         initialDescription: subtask.description,
         showReminderCancelButton: true,
-        onSave: (title, description) {
+        onSave: (title, description) async {
           controller.updateSubtask(
             parentTodo.id,
             subtask.id,
